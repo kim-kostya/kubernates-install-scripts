@@ -1,0 +1,39 @@
+# kubeadm-config.yaml
+apiVersion: kubeadm.k8s.io/v1beta3
+kind: ClusterConfiguration
+kubernetesVersion: v1.21.0
+controlPlaneEndpoint: "::6443"
+- token: "{{INITIAL_BOOTSTRAP_TOKEN}}"
+  description: "Initial bootstrap token"
+  usages:
+  - authentication
+  - signing
+  groups:
+  - system:bootstrappers:kubeadm:default-node-token
+apiServer:
+  extraArgs:
+    anonymous-auth: "false"
+    enable-admission-plugins: AlwaysPullImages,DefaultStorageClass
+    audit-log-path: /var/log/kubernetes/audit.log
+    cluster-signing-key-file: /etc/kubernetes/ca.key
+    deployment-controller-sync-period: "50"
+    config: /etc/kubernetes/scheduler-config.yaml
+  extraVolumes:
+    - name: config-folder
+      hostPath: /etc/kubernetes/
+      mountPath: /etc/kubernetes/
+      readOnly: true
+      pathType: "File"
+    - name: log-folder
+      hostPath: /var/log/kubernetes/
+      mountPath: /var/log/kubernetes/
+      readOnly: true
+      pathType: "File"
+etcd:
+  local:
+    extraArgs:
+      election-timeout: 1000
+---
+kind: KubeletConfiguration
+apiVersion: kubelet.config.k8s.io/v1beta1
+cgroupDriver: systemd
